@@ -1,6 +1,7 @@
 const path = require("node:path");
 const EslintWebpackPlugin = require("eslint-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
+const ReactRefreshWebpackPlugin = require("@pmmmwh/react-refresh-webpack-plugin");
 
 module.exports = {
     entry: "./src/main.js",
@@ -84,11 +85,14 @@ module.exports = {
             context: path.resolve(__dirname, "../src"),
             cache: true,
             cacheLocation: path.resolve(__dirname, "../node_modules/.cache/eslintcache"),
+            // webpack官网中关于eslint-webpack-plugin中提到,需要设置eslintPath为eslint/use-at-your-own-risk
             eslintPath: "eslint/use-at-your-own-risk"
         }),
         new HtmlWebpackPlugin({
             template: path.resolve(__dirname, "../public/index.html"),
-        })
+        }),
+        // react-refresh插件,自动给js和jsx开启hmr,配合babel配置使用
+        new ReactRefreshWebpackPlugin(),
     ],
     mode: "development",
     devtool: "source-map",
@@ -98,12 +102,19 @@ module.exports = {
         },
         runtimeChunk: {
             name: entryPoint => `runtime~${entryPoint.name}`
-        }
+        },
+    },
+    resolve: {
+        // 尝试按顺序解析这些后缀名。如果有多个文件有相同的名字，但后缀名不同，webpack 会解析列在数组首位的后缀的文件 并跳过其余的后缀。
+        extensions: [".jsx", ".js", ".json", ".wasm"]
     },
     devServer: {
         host: "localhost",
         port: "8080",
         open: true,
-        hot: true
+        hot: true,
+        // 当使用了react路由时,当刷新页面时会404,因为没有对应的资源;
+        // 开启该功能可以当404时返回index,react会根据路径解析到正确的路由
+        historyApiFallback: true
     }
 }
